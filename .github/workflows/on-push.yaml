@@ -34,23 +34,17 @@ jobs:
           echo "❌ You must type 'YES' to deploy to staging or prod."
           exit 1
 
-      - name: Verify branch, tag, or commit exists (fail fast)
+      - name: Verify branch, tag, or commit exists
         run: |
           REF="${{ github.event.inputs.ref }}"
-
-          # Initialize empty repo and fetch references
           git init .
           git remote add origin https://github.com/${{ github.repository }}.git
-          git fetch origin --tags --prune --depth=100
 
-          # Check if branch or tag exists
-          if git ls-remote --exit-code origin "$REF" >/dev/null 2>&1; then
-            echo "✅ Found branch or tag: $REF"
-          # Otherwise check if commit exists
-          elif git fetch origin "$REF" --depth=1 2>/dev/null && git rev-parse --quiet --verify "$REF^{commit}" >/dev/null; then
-            echo "✅ Found commit: $REF"
+          # Try fetching the commit or branch directly
+          if git fetch origin "$REF" --depth=1 2>/dev/null; then
+            echo "✅ Found branch or commit: $REF"
           else
-            echo "❌ Branch, tag, or commit '$REF' does not exist in remote."
+            echo "❌ Branch, tag, or commit '$REF' not found in remote."
             exit 1
           fi
 
