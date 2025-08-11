@@ -37,18 +37,18 @@ jobs:
       - name: Verify branch, tag, or commit exists
         run: |
           REF="${{ github.event.inputs.ref }}"
-          
-          # Fetch shallow copy of the ref (branch, tag, or commit)
-          if ! git fetch origin "$REF" --depth=1 2>/dev/null; then
-            echo "❌ Could not fetch ref '$REF'. It might not exist."
-            exit 1
-          fi
 
-          # Now check if it's a valid commit
-          if git rev-parse --verify "$REF^{commit}" >/dev/null 2>&1; then
-            echo "✅ Found commit/branch/tag: $REF"
+          # First fetch all refs (branches + tags)
+          git fetch --all --tags --prune --depth=50
+
+          # If it's a branch or tag
+          if git show-ref --verify --quiet "refs/heads/$REF" || git show-ref --verify --quiet "refs/tags/$REF"; then
+            echo "✅ Found branch/tag: $REF"
+          # If it's a commit SHA (short or full)
+          elif git rev-parse --quiet --verify "$REF^{commit}" >/dev/null; then
+            echo "✅ Found commit: $REF"
           else
-            echo "❌ '$REF' is not a valid commit, branch, or tag."
+            echo "❌ Branch, tag, or commit '$REF' does not exist."
             exit 1
           fi
 
