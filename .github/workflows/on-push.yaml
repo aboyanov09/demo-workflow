@@ -34,6 +34,13 @@ jobs:
           echo "❌ You must type 'YES' to deploy to staging or prod."
           exit 1
 
+      - name: Check branch before checkout
+        run: |
+          if ! git ls-remote --exit-code origin ${{ github.event.inputs.ref }} >/dev/null 2>&1; then
+            echo "❌ Branch or commit '${{ github.event.inputs.ref }}' does not exist."
+            exit 1
+          fi
+
       - name: Show selected inputs
         run: |
           echo "Environment: $DEPLOY_ENV"
