@@ -34,12 +34,20 @@ jobs:
           echo "❌ You must type 'YES' to deploy to staging or prod."
           exit 1
 
-      - name: Check branch before checkout
+      - name: Verify branch or commit exists
         run: |
-          if ! git ls-remote --exit-code origin ${{ github.event.inputs.ref }} >/dev/null 2>&1; then
-            echo "❌ Branch or commit '${{ github.event.inputs.ref }}' does not exist."
+          REF="${{ github.event.inputs.ref }}"
+          # Try branch/tag first
+          if git ls-remote --exit-code origin "$REF" >/dev/null 2>&1; then
+            echo "✅ Found branch or tag: $REF"
+          # If not, try commit SHA
+          elif git cat-file -e "$REF^{commit}" 2>/dev/null; then
+            echo "✅ Found commit: $REF"
+          else
+            echo "❌ Branch, tag, or commit '$REF' does not exist."
             exit 1
           fi
+        shell: bash
 
       - name: Show selected inputs
         run: |
