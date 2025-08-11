@@ -34,20 +34,23 @@ jobs:
           echo "❌ You must type 'YES' to deploy to staging or prod."
           exit 1
 
-      - name: Verify branch or commit exists
+      - name: Verify branch, tag, or commit exists
         run: |
           REF="${{ github.event.inputs.ref }}"
-          # Try branch/tag first
-          if git ls-remote --exit-code origin "$REF" >/dev/null 2>&1; then
-            echo "✅ Found branch or tag: $REF"
-          # If not, try commit SHA
-          elif git cat-file -e "$REF^{commit}" 2>/dev/null; then
-            echo "✅ Found commit: $REF"
-          else
-            echo "❌ Branch, tag, or commit '$REF' does not exist."
+          
+          # Fetch shallow copy of the ref (branch, tag, or commit)
+          if ! git fetch origin "$REF" --depth=1 2>/dev/null; then
+            echo "❌ Could not fetch ref '$REF'. It might not exist."
             exit 1
           fi
-        shell: bash
+
+          # Now check if it's a valid commit
+          if git rev-parse --verify "$REF^{commit}" >/dev/null 2>&1; then
+            echo "✅ Found commit/branch/tag: $REF"
+          else
+            echo "❌ '$REF' is not a valid commit, branch, or tag."
+            exit 1
+          fi
 
       - name: Show selected inputs
         run: |
