@@ -1,0 +1,40 @@
+name: "Manual Deploy to Environment (Test)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      ref:
+        description: "Branch name or commit SHA to deploy"
+        required: true
+        default: main
+      confirm:
+        description: "Type 'YES' to confirm deployment if environment is staging or prod"
+        required: false
+        default: ""
+
+env:
+  DEPLOY_ENV: ${{ github.event.inputs.environment }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation for staging/prod
+        if: ${{ github.event.inputs.environment != 'dev' && github.event.inputs.confirm != 'YES' }}
+        run: |
+          echo "❌ You must type 'YES' to deploy to staging or prod."
+          exit 1
+
+      - name: Show selected inputs
+        run: |
+          echo "Environment: $DEPLOY_ENV"
+          echo "Ref: ${{ github.event.inputs.ref }}"
